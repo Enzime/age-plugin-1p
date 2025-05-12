@@ -1,4 +1,4 @@
-module github.com/Enzime/age-plugin-1p
+module github.com/Enzyme/age-plugin-pwmanager
 
 go 1.20
 

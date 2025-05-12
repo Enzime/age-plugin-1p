@@ -1,7 +1,6 @@
-package plugin
+package pwmanager
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -16,15 +15,13 @@ import (
 )
 
 type Identity struct {
-	Version    uint8
-	PubKey     ssh.PublicKey
-	privateKey []byte
+	Version uint8
+	PubKey  ssh.PublicKey
+	PrivKey []byte
 }
 
 func (i *Identity) Serialize() []any {
-	return []interface{}{
-		&i.Version,
-	}
+	return []any{&i.Version}
 }
 
 func (i *Identity) Recipient() *Recipient {
@@ -32,7 +29,7 @@ func (i *Identity) Recipient() *Recipient {
 }
 
 func (i *Identity) Unwrap(stanzas []*age.Stanza) (fileKey []byte, err error) {
-	ageIdentity, err := agessh.ParseIdentity(i.privateKey)
+	ageIdentity, err := agessh.ParseIdentity(i.PrivKey)
 	if err != nil {
 		return nil, err
 	}
@@ -65,66 +62,12 @@ func NewIdentity(privateKey []byte) (*Identity, error) {
 	}
 
 	identity := &Identity{
-		Version:    1,
-		PubKey:     signer.PublicKey(),
-		privateKey: privateKey,
+		Version: 1,
+		PubKey:  signer.PublicKey(),
+		PrivKey: privateKey,
 	}
 
 	return identity, nil
-}
-
-func DecodeIdentity(s string) (*Identity, error) {
-	var key Identity
-	name, b, err := page.ParseIdentity(s)
-	if err != nil {
-		return nil, err
-	}
-	if name != PluginName {
-		return nil, fmt.Errorf("invalid hrp")
-	}
-	r := bytes.NewBuffer(b)
-	for _, f := range key.Serialize() {
-		if err := binary.Read(r, binary.BigEndian, f); err != nil {
-			return nil, err
-		}
-	}
-
-	publicKey, err := ssh.ParsePublicKey(r.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	key.PubKey = publicKey
-
-	privateKey, err := ReadKeyFromPubKeyOp(publicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	key.privateKey = privateKey
-
-	return &key, nil
-}
-
-func ParseIdentity(f io.Reader) (*Identity, error) {
-	// Same parser as age
-	const privateKeySizeLimit = 1 << 24 // 16 MiB
-	scanner := bufio.NewScanner(io.LimitReader(f, privateKeySizeLimit))
-	var n int
-	for scanner.Scan() {
-		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
-			continue
-		}
-
-		identity, err := DecodeIdentity(line)
-		if err != nil {
-			return nil, fmt.Errorf("error at line %d: %v", n, err)
-		}
-		return identity, nil
-	}
-	return nil, fmt.Errorf("no identities found")
 }
 
 func EncodeIdentity(i *Identity) string {
@@ -135,7 +78,7 @@ func EncodeIdentity(i *Identity) string {
 
 	binary.Write(&b, binary.BigEndian, i.PubKey.Marshal())
 
-	return page.EncodeIdentity(PluginName, b.Bytes())
+	return page.EncodeIdentity(pwManager.PluginName(), b.Bytes())
 }
 
 var (

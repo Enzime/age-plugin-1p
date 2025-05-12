@@ -1,4 +1,4 @@
-package plugin
+package pwmanager
 
 import (
 	"filippo.io/age"
@@ -9,14 +9,10 @@ type DefaultIdentity struct {
 	identities []Identity
 }
 
-func NewDefaultIdentity() (*DefaultIdentity, error) {
-	d := new(DefaultIdentity)
-	identities, err := GetAllIdentities()
-	if err != nil {
-		return nil, err
+func NewDefaultIdentity(i []Identity) *DefaultIdentity {
+	return &DefaultIdentity{
+		identities: i,
 	}
-	d.identities = identities
-	return d, nil
 }
 
 func (d *DefaultIdentity) Unwrap(stanzas []*age.Stanza) (fileKey []byte, err error) {
@@ -34,5 +30,5 @@ func (d *DefaultIdentity) Unwrap(stanzas []*age.Stanza) (fileKey []byte, err err
 }
 
 func EncodeDefaultIdentity() string {
-	return page.EncodeIdentity(PluginName, nil)
+	return page.EncodeIdentity(pwManager.PluginName(), nil)
 }

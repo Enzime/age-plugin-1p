@@ -1,4 +1,4 @@
-package plugin
+package pwmanager
 
 import (
 	"fmt"
@@ -67,7 +67,7 @@ func DecodeRecipient(s string) (*Recipient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode recipient: %v", err)
 	}
-	if name != PluginName {
+	if name != pwManager.PluginName() {
 		return nil, fmt.Errorf("invalid plugin for type %s", name)
 	}
 
